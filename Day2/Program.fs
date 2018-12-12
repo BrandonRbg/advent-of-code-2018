@@ -2,24 +2,38 @@
 
 open System
 
+let countOccurencesOfCount count (counts: seq<seq<int>>) = 
+    counts
+    |> Seq.fold (fun acc stringCount -> if (Seq.contains count stringCount) then acc + 1 else acc) 0
+
+let countOccurencesOf2 = countOccurencesOfCount 2
+let countOccurencesOf3 = countOccurencesOfCount 3
+
+let getLineCounts (lines: seq<string>) =
+    lines 
+    |> Seq.map (fun line -> 
+        line 
+        |> Seq.countBy id 
+        |> Seq.map (fun (_, count) -> count))
+
+let countDifferences (a: string) (b: string) =
+    Seq.zip a b
+    |> Seq.fold (fun count (a, b) -> if (a <> b) then count + 1 else count ) 0
+
+let getLineDiff line otherlines: Map<string, int> = 
+    otherlines 
+    |> Seq.fold (fun lineDifferences otherLine -> lineDifferences.Add(line, countDifferences line otherLine)) Map.empty
+
+let findDifferences lines: Map<string, Map<string, int>> = 
+    lines
+    |> Seq.fold (fun allLinesDifferences line -> allLinesDifferences.Add(line, getLineDiff line lines)) Map.empty
+
 [<EntryPoint>]
-let main argv =
-    let linesSeq = System.IO.File.ReadLines("input.txt")
-    
-    let counts =
-        linesSeq
-        |> Seq.map (fun line -> 
-               line
-               |> Seq.countBy id
-               |> Seq.fold (fun idCount (char, count) -> 
-                      match count with
-                      | 2 -> (true, (idCount |> snd))
-                      | 3 -> ((idCount |> fst), true)
-                      | _ -> idCount) (false, false))
-        |> Seq.fold (fun totalCounts idCount -> 
-               match idCount with
-               | (true, true) -> ((totalCounts |> fst) + 1, (totalCounts |> snd) + 1)
-               | (true, false) -> ((totalCounts |> fst) + 1, totalCounts |> snd)
-               | (false, true) -> (totalCounts |> fst, (totalCounts |> snd) + 1)) (0, 0)
-    printfn "%d" (fst counts * snd counts)  
+let main _ =
+    let lineCounts = System.IO.File.ReadLines("input.txt")
+
+    let repeating2Times = countOccurencesOf2 (getLineCounts lineCounts)
+    let repeating3Times = countOccurencesOf3 (getLineCounts lineCounts)
+        
+    printfn "%d" (repeating2Times * repeating3Times)  
     0
